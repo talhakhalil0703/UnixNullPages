@@ -532,3 +532,42 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+// Changes the protection bits of the page range starting from address
+// up to len of pages to be read only
+int
+mprotect(void *addr, int len)
+{
+    if ((*(uint *)addr)%PGSIZE != 0 || len <= 0) {
+        return -1;
+    }
+
+    struct proc *curproc = myproc();
+    uint starting_address = *(uint*)addr;
+
+    for(int i = 0; i < len; i++){
+        if(change_pte_write_permissions(curproc->pgdir, starting_address+i*PGSIZE, 0) != 0)
+            return -1;
+    }
+    return 0;
+}
+
+
+// Changes the protection bits of the page range starting from address
+// up to len of pages to be read and write
+int
+munprotect(void *addr, int len)
+{
+    if ((*(uint *)addr)%PGSIZE != 0 || len <= 0) {
+        return -1;
+    }
+
+    struct proc *curproc = myproc();
+    uint starting_address = *(uint*)addr;
+
+    for(int i = 0; i < len; i++){
+        if(change_pte_write_permissions(curproc->pgdir, starting_address+i*PGSIZE, 1) != 0)
+            return -1;
+    }
+    return 0;
+}

@@ -322,7 +322,7 @@ copyuvm(pde_t *pgdir, uint sz)
 
   if((d = setupkvm()) == 0)
     return 0;
-  for(i = 0; i < sz; i += PGSIZE){
+  for(i = PGSIZE; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, (void *) i, 0)) == 0)
       panic("copyuvm: pte should exist");
     if(!(*pte & PTE_P))
@@ -385,6 +385,24 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
   return 0;
 }
 
+
+// Attempt to change the permissions of a page table entry
+// If permissions is 0, removes write permissions, else adds them
+// On success returns 0
+int
+change_pte_write_permissions(pde_t *pgdir, uint va, uint permissions){
+    pte_t* entry = walkpgdir(pgdir, (void*) va, 0);
+    if (entry == 0)
+        return -1;
+    // Remove write permissions
+    if (permissions == 0) {
+        *entry = *entry & ~PTE_W;
+    } else {
+        *entry = *entry | PTE_W;
+    }
+    lcr3(V2P(pgdir)); //Update process table to make use of the changes.
+    return 0;
+}
 //PAGEBREAK!
 // Blank page.
 //PAGEBREAK!
